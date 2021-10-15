@@ -1,0 +1,38 @@
+command_prefix: 
+  - "!punkscape "
+  - "!ps "
+description: "Hi,\nI am a bot to help you with your PunkScapes. Check this list of what I can do:"
+contract_address: "0x51ae5e2533854495f6c587865af64119db8f59b4"
+commands:
+  random:
+    brief: Show info about a random PunkScape.
+    help: Display rarity and attribute information about a random PunkScape.
+  enjoy:
+    brief: Just enjoy looking at a PunkScape.
+    help: Shows the Punkscape of the given ID without the focus on rarity just enjoy how it looks.
+  merge:
+    brief: Merge multiple PunkScapes into a large image.
+    help: Merge up to four PunkScapes to create a large one. Use the command !punkscape merge [ID] [ID] ...\nYou can also add h or v to each id (without a space) to flip the PunkScape horizontally or vertically.
+  stack:
+    brief: Stack multiple PunkScapes into a large image.
+    help: Stack up to six PunkScapes to create a large one. Use the command !punkscape stack [ID] [ID] ..., with the IDs given from top to bottom.\nYou can also add h or v to each id (without a space) to flip the PunkScape horizontally or vertically.
+  grid:
+    brief: Combine multiple PunkScapes into a large grid.
+    help: "Combine between up to 36 PunkScapes to create a large grid of PunkScapes. Use the command !punkscape grid [x] [y] [ID] [ID] ...\nWhere x is the number of Punkscapes in per row and y the number of PunkScapes per column. Then follow by all PunkScape IDs from first row to last row.\nYou can also add h or v to each id (without a space) to flip the PunkScape horizontally or vertically.\nExample 3x3 PunkScape: !punkscape grid 3 3 3990v 1197v 1887hv 9343 5874h 4159 5288 5279 3055"
+  scroll:
+    hidden: true
+    brief: Scroll through multiple merged PunkScapes.
+    help: Merge up to four PunkScapes to create a large one then scroll through it. Use the command !punkscape scroll [ID] [ID] ...\nYou can also add h or v to each id (without a space) to flip the PunkScape horizontally or vertically.
+  id:
+    brief: Display info for a given id.
+    help: Display rarity and attribute information about the PunkScape of the given ID (1-10000).
+  rank:
+    brief: Display info for a given rank.
+    help: Display rarity and attribute information about the Punkscape of the given rank (1-10000).
+  wallet:
+    brief: Show rariy for owned PunkScapes.
+    help: List all punkscapes of a wallet and show their id and rank. Supports address and .eth names.\nFor more detailed information about a specific PunkScape use the id command.
+  date:
+    brief: Search PunkScapes by date.
+    help: Display rarity and attribute information about the Punkscape with the closest matching date attribute. Use the command !punkscape date YYYY-MM-DD hh:mm (hour and minute are optional)
+  
