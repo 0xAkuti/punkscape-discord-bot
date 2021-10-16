@@ -14,8 +14,6 @@ from PIL import Image
 if TYPE_CHECKING:
     from bot import PunkScapeBot
 
-# TODO allow merging and stacking more punkscapes but decrease resolution as nr of scapes increases
-
 PS_WIDTH = 72
 PS_HEIGHT = 24
 
@@ -26,6 +24,8 @@ def create_discord_image(img: Image, filename: str):
         img_binary.seek(0)
         return discord.File(fp=img_binary, filename=filename)
 
+def get_scale(n):
+    return min(25, 50//n**.5)
 
 class Fun(commands.Cog):
     def __init__(self, bot: PunkScapeBot):
@@ -42,7 +42,7 @@ class Fun(commands.Cog):
             if 'h' in cmd_id:
                 img = img.transpose(Image.FLIP_LEFT_RIGHT)
             yield img
-
+    
     async def animate_mp4(self, ctx: commands.Context, ids: List[str], scale: int = 10, fps: int = 15):
         imgs = list(self.load_images(ids))
         imgs.append(imgs[0])
@@ -51,7 +51,7 @@ class Fun(commands.Cog):
             img_merged.paste(img, (PS_WIDTH*idx, 0))
         img_merged = img_merged.resize((PS_WIDTH * scale * len(imgs), PS_HEIGHT * scale), Image.NEAREST)
         nr_frames = PS_WIDTH*(len(imgs)-1)
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v') # TODO change to avc1
         video = cv2.VideoWriter(str(self.bot.data_dir / 'punkscape_animation.mp4'),
                                 fourcc, fps, (PS_WIDTH * scale, PS_HEIGHT * scale))
         for i in range(nr_frames):
@@ -83,12 +83,12 @@ class Fun(commands.Cog):
 
     @commands.command()
     async def merge(self, ctx: commands.Context, *ids: str):
-        if not (1 < len(ids) < 5):
-            await ctx.send(f'You can merge between 2 and 4 punkscapes.')
+        if not (1 < len(ids) < 101):
+            await ctx.send(f'You can merge between 2 and 100 punkscapes.')
             return
         await ctx.trigger_typing()
 
-        scale = 25
+        scale = get_scale(len(ids))
         img_merged = Image.new("RGB", (PS_WIDTH * len(ids), PS_HEIGHT), "black")
         for idx, img in enumerate(self.load_images(ids)):
             img_merged.paste(img, (PS_WIDTH*idx, 0))
@@ -98,14 +98,13 @@ class Fun(commands.Cog):
 
     @commands.command()
     async def stack(self, ctx: commands.Context, *ids: str):
-        if not (1 < len(ids) < 7):
-            await ctx.send(f'You can stack between 2 and 6 punkscapes.')
+        if not (1 < len(ids) < 101):
+            await ctx.send(f'You can stack between 2 and 100 punkscapes.')
             return
         await ctx.trigger_typing()
 
-        height = PS_HEIGHT * len(ids)
-        scale = 15
-        img_merged = Image.new("RGB", (PS_WIDTH, height), "black")
+        scale = get_scale(len(ids))
+        img_merged = Image.new("RGB", (PS_WIDTH, PS_HEIGHT * len(ids)), "black")
         for idx, img in enumerate(self.load_images(ids)):
             img_merged.paste(img, (0, PS_HEIGHT*idx))
         img_merged = img_merged.resize((PS_WIDTH*scale, PS_HEIGHT*scale*len(ids)), Image.NEAREST)
@@ -114,15 +113,15 @@ class Fun(commands.Cog):
 
     @commands.command()
     async def grid(self, ctx: commands.Context, x: int, y: int, *ids: str):
-        if not (0 < (x * y) < 37):
-            await ctx.send(f'You can only combine up 36 PunkScapes.')
+        if not (0 < (x * y) < 101):
+            await ctx.send(f'You can only combine up 100 PunkScapes.')
             return
         if (x * y) != len(ids):
             await ctx.send(f'Expected {x*y} PunkScapes but got {len(ids)}.')
             return
         await ctx.trigger_typing()
 
-        scale = 10 if len(ids) < 26 else 5
+        scale = get_scale(len(ids))
         img_merged = Image.new("RGB", (PS_WIDTH * x, PS_HEIGHT * y), "black")
         for idx, img in enumerate(self.load_images(ids)):
             x_pos = idx % x
