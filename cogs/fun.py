@@ -25,7 +25,7 @@ def create_discord_image(img: Image, filename: str):
         return discord.File(fp=img_binary, filename=filename)
 
 def get_scale(n):
-    return min(25, 50//n**.5)
+    return min(25, round(50//n**.5))
 
 class Fun(commands.Cog):
     def __init__(self, bot: PunkScapeBot):
