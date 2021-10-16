@@ -93,7 +93,7 @@ class Fun(commands.Cog):
         for idx, img in enumerate(self.load_images(ids)):
             img_merged.paste(img, (PS_WIDTH*idx, 0))
         img_merged = img_merged.resize((PS_WIDTH*scale*len(ids), PS_HEIGHT*scale), Image.NEAREST)
-        name_str = '_'.join(map(str, ids))
+        name_str = '_'.join(map(str, ids[:5]))
         await ctx.send(file=create_discord_image(img_merged, f'punkscapes_merge_{name_str}.png'))
 
     @commands.command()
@@ -108,7 +108,7 @@ class Fun(commands.Cog):
         for idx, img in enumerate(self.load_images(ids)):
             img_merged.paste(img, (0, PS_HEIGHT*idx))
         img_merged = img_merged.resize((PS_WIDTH*scale, PS_HEIGHT*scale*len(ids)), Image.NEAREST)
-        name_str = '_'.join(map(str, ids))
+        name_str = '_'.join(map(str, ids[:5]))
         await ctx.send(file=create_discord_image(img_merged, f'punkscapes_stack_{name_str}.png'))
 
     @commands.command()
