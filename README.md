@@ -1,4 +1,5 @@
 # PunkScape Discord Bot
+![Merged PunkScape example](https://cdn.discordapp.com/attachments/894713436171284531/898906023568482375/punkscapes_merge_413_2122_413h.png)
 
 A Discord bot created for the Discord server of [PunkScapes](https://punkscape.xyz/), a banner NFT project.  
 It was intially created to lookup rarities of scapes but subsequently updated to perfrom other tasks like creating dyptichs.
