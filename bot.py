@@ -76,7 +76,7 @@ class PunkScapeBot(commands.Bot):
         embed = discord.Embed(title=f'PunkScape #{id}')
         embed.description = f'Links: [Official](https://punkscape.xyz/scapes/{id}) & ' \
                             f'[Opensea](https://opensea.io/assets/{self.contract_address}/{id})'
-        embed.set_image(url=ps['external_image'])
+        embed.set_image(url=f'https://cdn.punkscape.xyz/scapes/lg/{id}.png')
         embed.add_field(name='Rarity Score', value=ps['rarity_score'])
         embed.add_field(name='Rank', value=f"{ps['rank']+1}/{len(self.nft_data)}")
         embed.add_field(name='Date', value=str(datetime.datetime.fromtimestamp(ps['date'])))

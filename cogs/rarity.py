@@ -66,6 +66,6 @@ class Rarity(commands.Cog):
         else:
             embed.description += ', '.join(f'**{id}** ({rank})' for rank, id in data)
         id = data[0][1]
-        embed.set_image(url=self.bot.nft_data[id]["external_image"])
+        embed.set_image(url=f'https://cdn.punkscape.xyz/scapes/lg/{id}.png')
         embed.set_footer(text=f'PunkScape #{id}')
         await ctx.send(embed=embed)
