@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Iterable, List
 import cv2
 import discord
 import numpy as np
+import requests
 from discord.ext import commands
 from PIL import Image
 
@@ -24,8 +25,10 @@ def create_discord_image(img: Image, filename: str):
         img_binary.seek(0)
         return discord.File(fp=img_binary, filename=filename)
 
+
 def get_scale(n):
     return min(25, round(50//n**.5))
+
 
 def extract_id(cmd_id):
     if cmd_id == '?':
@@ -35,10 +38,15 @@ def extract_id(cmd_id):
         raise ValueError('Invalid id, no or contains multiple numbers.')
     return int(_ids[0])
 
-def select_id(scores, used_ids):
+
+def select_id(scores, used_ids, allowed_ids=None):
     for potential_id in scores.argsort():
-        if potential_id not in used_ids and random.randint(0,1):
+        if allowed_ids and potential_id not in allowed_ids:
+            continue
+        if potential_id not in used_ids and random.randint(0, 1):
             return potential_id, scores[potential_id]
+
+
 class Fun(commands.Cog):
     def __init__(self, bot: PunkScapeBot):
         self.bot = bot
@@ -55,7 +63,7 @@ class Fun(commands.Cog):
             if 'h' in cmd_id:
                 img = img.transpose(Image.FLIP_LEFT_RIGHT)
             yield img
-    
+
     async def animate_mp4(self, ctx: commands.Context, ids: List[str], scale: int = 10, fps: int = 15):
         imgs = list(self.load_images(ids))
         imgs.append(imgs[0])
@@ -64,7 +72,7 @@ class Fun(commands.Cog):
             img_merged.paste(img, (PS_WIDTH*idx, 0))
         img_merged = img_merged.resize((PS_WIDTH * scale * len(imgs), PS_HEIGHT * scale), Image.NEAREST)
         nr_frames = PS_WIDTH*(len(imgs)-1)
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v') # TODO change to avc1
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # TODO change to avc1
         video = cv2.VideoWriter(str(self.bot.data_dir / 'punkscape_animation.mp4'),
                                 fourcc, fps, (PS_WIDTH * scale, PS_HEIGHT * scale))
         for i in range(nr_frames):
@@ -153,14 +161,14 @@ class Fun(commands.Cog):
     def get_scores(self, prev, prev_flipped, next):
         scores = np.zeros((10000,))
         if prev != 0:
-            if prev_flipped: # compare previous start with current start -> S[P, ...]
+            if prev_flipped:  # compare previous start with current start -> S[P, ...]
                 scores += self.sim[prev, ..., 0]
-            else: # compare previous end with current start -> M[P, ...]
+            else:  # compare previous end with current start -> M[P, ...]
                 scores += self.sim[prev, ..., 1]
         if next != '?':
-            if 'h' in next: # compare current end with next end -> E[..., N]
+            if 'h' in next:  # compare current end with next end -> E[..., N]
                 scores += self.sim[..., extract_id(next)-1, 2]
-            else: # compare current end with next start -> M[..., N]
+            else:  # compare current end with next start -> M[..., N]
                 scores += self.sim[..., extract_id(next)-1, 1]
         return scores
 
@@ -169,24 +177,18 @@ class Fun(commands.Cog):
         if prev != 0:
             if prev_flipped:  # compare previous start with current end -> M[..., P]
                 scores += self.sim[..., prev, 1]
-            else: # compare previous end with current end -> E[P, ...]
+            else:  # compare previous end with current end -> E[P, ...]
                 scores += self.sim[prev, ..., 2]
         if next != '?':
-            if 'h' in next: # compare current start with next end -> M[N, ...]
+            if 'h' in next:  # compare current start with next end -> M[N, ...]
                 scores += self.sim[extract_id(next)-1, ..., 1]
-            else: # compare current start with next start -> S[..., N]
+            else:  # compare current start with next start -> S[..., N]
                 scores += self.sim[..., extract_id(next)-1, 0]
         return scores
 
-    @commands.command()
-    async def merge(self, ctx: commands.Context, *ids: str):
-        if '?' not in ''.join(ids):
-            await self._merge(ctx, *ids)
-            return
-        await ctx.trigger_typing()
-
+    def _create_merge_command(self, ids: List[str], allowed_ids: List[int] = None):
         ids = *ids, '?'
-        used_ids = set([extract_id(x) for x in ids])
+        used_ids = set([extract_id(x)-1 for x in ids])
         prev = 0
         flip = False
         command = []
@@ -194,10 +196,9 @@ class Fun(commands.Cog):
             id = 0
             if current == '?':
                 if prev != 0 or next != '?':
-                    id, score = select_id(self.get_scores(prev, flip, next), used_ids)
-                    if score > 50:
-                        id_f, score_f = select_id(self.get_scores_flipped(prev, flip, next), used_ids)
-                        print(f'N: {id} | {score} || F: {id_f} | {score_f} with next {next}')
+                    id, score = select_id(self.get_scores(prev, flip, next), used_ids, allowed_ids)
+                    if score > 10:
+                        id_f, score_f = select_id(self.get_scores_flipped(prev, flip, next), used_ids, allowed_ids)
                         if score > score_f:
                             id = id_f
                             flip = True
@@ -212,6 +213,29 @@ class Fun(commands.Cog):
             command.append(f'{id+1}{"h" if flip else ""}')
             used_ids.add(id)
             prev = id
+        return command
+
+    @commands.group(invoke_without_command=True)
+    async def merge(self, ctx: commands.Context, *ids: str):
+        if '?' not in ''.join(ids):
+            await self._merge(ctx, *ids)
+            return
+        await ctx.trigger_typing()
+        command = self._create_merge_command(ids)
         # await ctx.send(f'I rate it {abs(int(10-max(scores)/10))} out of 10')
+        await ctx.send(f'{ctx.prefix}merge {" ".join(command)}')
+        await self._merge(ctx, *command)
+
+    @merge.command()
+    async def owned(self, ctx: commands.Context, address: str, *ids: str):
+        await ctx.trigger_typing()
+        if address.endswith('.eth'):
+            address = self.bot.ns.address(address)
+        if not self.bot.w3.isAddress(address):
+            await ctx.send('Please provide a valid ethereum address or .eth name.')
+            return
+        scapes = requests.get(f'https://api.punkscape.xyz/address/{address}/punkscapes').json()
+        allowed_ids = [ps['token_id']-1 for ps in scapes]
+        command = self._create_merge_command(ids, allowed_ids)
         await ctx.send(f'{ctx.prefix}merge {" ".join(command)}')
         await self._merge(ctx, *command)
