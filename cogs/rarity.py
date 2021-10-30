@@ -6,18 +6,14 @@ from typing import TYPE_CHECKING
 import discord
 import requests
 from discord.ext import commands
-from ens import ENS
-from web3 import Web3, WebsocketProvider
 
 if TYPE_CHECKING:
     from bot import PunkScapeBot
 
 
 class Rarity(commands.Cog):
-    def __init__(self, bot: PunkScapeBot, endpoint_url: str):
+    def __init__(self, bot: PunkScapeBot):
         self.bot = bot
-        self.w3 = Web3(WebsocketProvider(endpoint_url))
-        self.ns = ENS.fromWeb3(self.w3)
 
     @commands.command()
     async def id(self, ctx: commands.Context, id: int):
@@ -37,13 +33,13 @@ class Rarity(commands.Cog):
         await ctx.trigger_typing()
         name = address
         if address.endswith('.eth'):
-            address = self.ns.address(address)
-        if not self.w3.isAddress(address):
+            address = self.bot.ns.address(address)
+        if not self.bot.w3.isAddress(address):
             await ctx.send('Please provide a valid ethereum address or .eth name.')
             return
         elif name == address:
-            address = self.w3.toChecksumAddress(address)
-            name = self.ns.name(address)
+            address = self.bot.w3.toChecksumAddress(address)
+            name = self.bot.ns.name(address)
             if not name:
                 name = address
         scapes = requests.get(f'https://api.punkscape.xyz/address/{address}/punkscapes').json()

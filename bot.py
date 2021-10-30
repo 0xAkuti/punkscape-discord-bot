@@ -8,6 +8,8 @@ import discord
 import numpy as np
 import yaml
 from discord.ext import commands
+from ens import ENS
+from web3 import Web3, WebsocketProvider
 
 import cogs
 import rarity
@@ -42,18 +44,21 @@ class PunkScapeBot(commands.Bot):
             bot_data = yaml.safe_load(f)
         super().__init__(**bot_data, case_insensitive=True)
         self.before_invoke(self._before_invoke_impl)
+        self.w3 = Web3(WebsocketProvider(endpoint_url))
+        self.ns = ENS.fromWeb3(self.w3)
 
         self.nr_calls = defaultdict(int)
         self.data_dir = Path(data_path)
         self.nft_data = load_punkscapes(self.data_dir / 'data.json')
         self.contract_address = bot_data['contract_address']
         self.nft_dates = get_dt_dates(self.nft_data)
-        self.add_cog(cogs.Rarity(self, endpoint_url))
+        self.add_cog(cogs.Rarity(self))
         self.add_cog(cogs.Fun(self))
         self.add_cog(cogs.Search(self))
         for command, command_help in bot_data['commands'].items():
             for k, v in command_help.items():
                 setattr(self.get_command(command), k, v)
+
         print('Bot initialized')
 
     async def on_command_error(self, ctx: commands.Context, error):
