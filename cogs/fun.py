@@ -27,9 +27,22 @@ def create_discord_image(img: Image, filename: str):
 def get_scale(n):
     return min(25, round(50//n**.5))
 
+def extract_id(cmd_id):
+    if cmd_id == '?':
+        return 0
+    _ids = re.findall('\d+', cmd_id)
+    if len(_ids) != 1:
+        raise ValueError('Invalid id, no or contains multiple numbers.')
+    return int(_ids[0])
+
+def select_id(scores, used_ids):
+    for potential_id in scores.argsort():
+        if potential_id not in used_ids and random.randint(0,1):
+            return potential_id, scores[potential_id]
 class Fun(commands.Cog):
     def __init__(self, bot: PunkScapeBot):
         self.bot = bot
+        self.sim = np.array(Image.open(self.bot.data_dir / 'similarity_scores.png'))
 
     def load_images(self, cmd_ids: Iterable[str]):
         for cmd_id in cmd_ids:
@@ -81,8 +94,7 @@ class Fun(commands.Cog):
         embed.set_image(url=ps['external_image'])
         await ctx.send(embed=embed)
 
-    @commands.command()
-    async def merge(self, ctx: commands.Context, *ids: str):
+    async def _merge(self, ctx: commands.Context, *ids: str):
         if not (1 < len(ids) < 101):
             await ctx.send(f'You can merge between 2 and 100 punkscapes.')
             return
@@ -137,3 +149,69 @@ class Fun(commands.Cog):
             return
         await ctx.trigger_typing()
         await self.animate_mp4(ctx, ids)
+
+    def get_scores(self, prev, prev_flipped, next):
+        scores = np.zeros((10000,))
+        if prev != 0:
+            if prev_flipped: # compare previous start with current start -> S[P, ...]
+                scores += self.sim[prev, ..., 0]
+            else: # compare previous end with current start -> M[P, ...]
+                scores += self.sim[prev, ..., 1]
+        if next != '?':
+            if 'h' in next: # compare current end with next end -> E[..., N]
+                scores += self.sim[..., extract_id(next)-1, 2]
+            else: # compare current end with next start -> M[..., N]
+                scores += self.sim[..., extract_id(next)-1, 1]
+        return scores
+
+    def get_scores_flipped(self, prev, prev_flipped, next):
+        scores = np.zeros((10000,))
+        if prev != 0:
+            if prev_flipped:  # compare previous start with current end -> M[..., P]
+                scores += self.sim[..., prev, 1]
+            else: # compare previous end with current end -> E[P, ...]
+                scores += self.sim[prev, ..., 2]
+        if next != '?':
+            if 'h' in next: # compare current start with next end -> M[N, ...]
+                scores += self.sim[extract_id(next)-1, ..., 1]
+            else: # compare current start with next start -> S[..., N]
+                scores += self.sim[..., extract_id(next)-1, 0]
+        return scores
+
+    @commands.command()
+    async def merge(self, ctx: commands.Context, *ids: str):
+        if '?' not in ''.join(ids):
+            await self._merge(ctx, *ids)
+            return
+        await ctx.trigger_typing()
+
+        ids = *ids, '?'
+        used_ids = set([extract_id(x) for x in ids])
+        prev = 0
+        flip = False
+        command = []
+        for current, next in zip(ids, ids[1:]):
+            id = 0
+            if current == '?':
+                if prev != 0 or next != '?':
+                    id, score = select_id(self.get_scores(prev, flip, next), used_ids)
+                    if score > 50:
+                        id_f, score_f = select_id(self.get_scores_flipped(prev, flip, next), used_ids)
+                        print(f'N: {id} | {score} || F: {id_f} | {score_f} with next {next}')
+                        if score > score_f:
+                            id = id_f
+                            flip = True
+                    else:
+                        flip = False
+                else:
+                    id = random.randint(1, 10000)
+                    flip = False
+            else:
+                id = extract_id(current) - 1
+                flip = 'h' in current
+            command.append(f'{id+1}{"h" if flip else ""}')
+            used_ids.add(id)
+            prev = id
+        # await ctx.send(f'I rate it {abs(int(10-max(scores)/10))} out of 10')
+        await ctx.send(f'{ctx.prefix}merge {" ".join(command)}')
+        await self._merge(ctx, *command)
