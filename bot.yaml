@@ -12,13 +12,13 @@ commands:
     help: Shows the Punkscape of the given ID without the focus on rarity just enjoy how it looks.
   merge:
     brief: Merge multiple PunkScapes into a large image.
-    help: Merge up to four PunkScapes to create a large one. Use the command !punkscape merge [ID] [ID] ...\nYou can also add h or v to each id (without a space) to flip the PunkScape horizontally or vertically.
+    help: Merge up to PunkScapes to create a large one. Use the command !punkscape merge [ID] [ID] ...\nYou can also add h or v to each id (without a space) to flip the PunkScape horizontally or vertically.\n Instead of an ID you can also use the placeholder ? to let the me choose for you.
   stack:
     brief: Stack multiple PunkScapes into a large image.
-    help: Stack up to six PunkScapes to create a large one. Use the command !punkscape stack [ID] [ID] ..., with the IDs given from top to bottom.\nYou can also add h or v to each id (without a space) to flip the PunkScape horizontally or vertically.
+    help: Stack PunkScapes to create a large one. Use the command !punkscape stack [ID] [ID] ..., with the IDs given from top to bottom.\nYou can also add h or v to each id (without a space) to flip the PunkScape horizontally or vertically.
   grid:
     brief: Combine multiple PunkScapes into a large grid.
-    help: "Combine between up to 36 PunkScapes to create a large grid of PunkScapes. Use the command !punkscape grid [x] [y] [ID] [ID] ...\nWhere x is the number of Punkscapes in per row and y the number of PunkScapes per column. Then follow by all PunkScape IDs from first row to last row.\nYou can also add h or v to each id (without a space) to flip the PunkScape horizontally or vertically.\nExample 3x3 PunkScape: !punkscape grid 3 3 3990v 1197v 1887hv 9343 5874h 4159 5288 5279 3055"
+    help: "Combine PunkScapes to create a large grid of PunkScapes. Use the command !punkscape grid [x] [y] [ID] [ID] ...\nWhere x is the number of Punkscapes in per row and y the number of PunkScapes per column. Then follow by all PunkScape IDs from first row to last row.\nYou can also add h or v to each id (without a space) to flip the PunkScape horizontally or vertically.\nExample 3x3 PunkScape: !punkscape grid 3 3 3990v 1197v 1887hv 9343 5874h 4159 5288 5279 3055"
   scroll:
     hidden: true
     brief: Scroll through multiple merged PunkScapes.
