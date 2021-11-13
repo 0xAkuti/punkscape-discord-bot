@@ -40,11 +40,16 @@ def extract_id(cmd_id):
 
 
 def select_id(scores, used_ids, allowed_ids=None):
+    last_allowed_id = 0
     for potential_id in scores.argsort():
         if allowed_ids and potential_id not in allowed_ids:
             continue
         if potential_id not in used_ids and random.randint(0, 1):
             return potential_id, scores[potential_id]
+        last_allowed_id = potential_id
+    return last_allowed_id, scores[last_allowed_id]
+
+
 
 
 class Fun(commands.Cog):
