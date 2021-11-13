@@ -205,7 +205,10 @@ class Fun(commands.Cog):
                     else:
                         flip = False
                 else:
-                    id = random.randint(1, 10000)
+                    if allowed_ids:
+                        id = random.sample(allowed_ids, 1)[0]
+                    else:
+                        id = random.randint(1, 10000)
                     flip = False
             else:
                 id = extract_id(current) - 1
